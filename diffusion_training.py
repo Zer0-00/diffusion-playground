@@ -10,34 +10,179 @@ import sys
 import torch
 from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
-from tqdm.auto import tqdm
-from diffusers import UNet2DModel
+from torch.utils.data import DataLoader
+from torch.nn.utils import clip_grad_norm_
+from torch.nn import functional as F
+from diffusers import UNet2DModel, DDPMScheduler, DDPMPipeline
+from diffusers.training_utils import EMAModel
+from tqdm import tqdm
 
 import utils
-
+from dataset import MVtec_Leather
 
 # set environment configuration
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 def training(args):
     #basic configuration
+    torch.random.seed(args["seed"])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    for folder in ["metric", "images", "model"]:
+    for folder in ["metric", "images", "checkpoint"]:
         f_dir = os.path.join(args["output_dir"], folder)
         utils.create_folders(f_dir)
     
     del folder, f_dir
 
-    #initial models
-    writer = SummaryWriter()
-
-    model = UNet2DModel(
-        sample_size=args["resolution"],
-        in_channels=args["in_channels"],
-        out_channels=args["in_channels"]
-
+    writer = SummaryWriter(log_dir=os.path.join(args["output_dir"],"metric"))
+    
+    #initialize dataset
+    rgb = (args["in_channels"] == 3)
+    train_dataset = MVtec_Leather(
+        args["input_path"],
+        anomalous=False,
+        img_size=args["img_size"],
+        rgb=rgb
+        )
+    test_dataset = MVtec_Leather(
+        args["input_path"],
+        anomalous=True,
+        img_size=args["img_size"],
+        rgb=rgb,
+        include_good=True
     )
+
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
+        )
+    test_dataloader = DataLoader(
+        test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
+        )
+
+    del rgb
+    #initialize the model
+    start_epoch = 0
+    
+    model = UNet2DModel(
+        sample_size=args["img_size"],
+        in_channels=args["in_channels"],
+        out_channels=args["in_channels"],
+        layers_per_block=args["layer_per_block"],
+        block_out_channels=args["block_out_channel"],
+        down_block_types=args["down_block_types"],
+        up_block_types=args["up_block_types"]
+    )
+    model.to(device)
+    noise_scheduler = DDPMScheduler(
+        num_train_timesteps=args["num_train_timesteps"],
+        beta_schedule=args["beta_schedule"],
+        prediction_type=args["prediction_type"]
+    )
+    noise_scheduler.to(device)
+        
+    #initalize EMAmodel
+    ema_model = EMAModel(
+        model,
+        inv_gamma=args["ema_inv_gamma"],
+        power=args["ema_power"],
+        max_value=args["ema_max_value"],
+        min_value=args["ema_min_value"]
+    )
+    
+    #initialize optimiser
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=args["learning_rate"],
+        betas=args["betas"],
+        weight_decay=args["weight_decay"],
+        eps=args["optimiser_epsilon"]
+    )
+
+    #load_checkpoint
+    if args["checkpoint"] is not None:
+        #find supposed checkpoint
+        if args["checkpoint"] != "latest":
+            checkpoint_path = os.path.join(args["output_dir"], "model",args["checkpoint"]+".pt")
+        else:
+            folder = os.path.join(args["output_dir"], "model")
+            candidates = [cp for cp in os.listdir(folder) if cp.endwith(".pt")]
+            last = sorted(candidates)[-1]
+            checkpoint_path = os.path.join(folder, last)
+            
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        
+        #resume model
+        model.load_state_dict(checkpoint["Unet"])
+        ema_model.averaged_model.load_state_dict(checkpoint["ema_model"])
+        ema_model.optimization_step = checkpoint["ema_optimization_step"]
+        
+        #resume optimiser
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        
+        start_epoch = checkpoint["start_epoch"]
+        
+        del checkpoint
+        
+    #training 
+    tqdm_epochs = tqdm(range(start_epoch, args["max_epoch"]),unit="epoch")
+    for epoch in tqdm_epochs:
+        model.train()
+        mean_loss = 0
+        for step, batch in enumerate(train_dataloader):
+            input_images = batch["input"]
+            input_images = input_images.to(device)
+            
+            #sample noise and timesteps
+            noise = torch.randn(input_images.shape).to(input_images.device)
+            
+            batch_size = input_images.shape[0]
+            timesteps = torch.randint(
+                0, noise_scheduler.config.num_train_timesteps, (batch_size,), device=input_images.device
+                ).long()
+            
+            #add noise
+            noisy_images = noise_scheduler.add_noise(input_images, noise, timesteps)
+            
+            #denoising
+            epsilons = model(noisy_images, timesteps).sample
+            
+            #update weights
+            loss = F.mse_loss(epsilons, noise,reduction="mean")
+            
+            optimizer.zero_grad()
+            loss.backward()
+            clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+            
+            ema_model.step(model)
+            
+            mean_loss += loss.detach()
+            
+        mean_loss /= (step + 1)
+        
+        #report and save results
+        writer.add_scalar("train_loss", mean_loss), epoch
+        
+        #sample 1 image and show the noising and denoising result
+        if epoch % args["exhibit_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
+            writer.add_images("input images", input_images)
+            writer.add_images("noisy images", noisy_images)
+            
+            writer.add_images("")
+            
+            
+            
+            
+            
+            
+
+
+   
+    
+
+    
+
+
 
     
 
@@ -57,7 +202,7 @@ def partly_ddpm_ano():
 
 if __name__ == '__main__':
     #set configuration
-    torch.random.seed(1126)
+
     config_dir = os.path.join('.', 'configs')
     
     cfg = sys.argv[1]

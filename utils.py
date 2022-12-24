@@ -23,7 +23,7 @@ def load_parameters(para_dir:str) -> dict:
     #pairs: {(arg_name, default_value)}
         for arg_name in pairs:
             if args[arg_name] == '':
-                args[arg_name] = args[arg_name]
+                args[arg_name] = pairs[arg_name]
 
     #set input channel
     if args["dataset"].lower() == "leather":
@@ -38,16 +38,66 @@ def load_parameters(para_dir:str) -> dict:
 
 
     #set output path
-    set_default_value("output_path", os.path.join('.','output', cfgs_name))
+    set_default_value({"output_path": os.path.join('.','output', cfgs_name)})
  
-    #set Unet structure
+    #set default Unet structure
     default_Unet = {
-
+        "layers_per_block": 2,
+        "block_out_channels": (128, 128, 256, 256, 512, 512),
+        "down_block_types": (
+            "DownBlock2D",
+            "DownBlock2D",
+            "DownBlock2D",
+            "DownBlock2D",
+            "AttnDownBlock2D",
+            "DownBlock2D",
+        ),
+        "up_block_types": (
+            "UpBlock2D",
+            "AttnUpBlock2D",
+            "UpBlock2D",
+            "UpBlock2D",
+            "UpBlock2D",
+            "UpBlock2D",
+        )   
     }
-    set_default_value("layers_per_block", 2)
-    set_default_value("block_out_channels", (128, 128, 256, 256, 512, 512))
-    set_default_value()
-
+    
+    set_default_value(default_Unet)
+    
+    #set default noise scheduler
+    default_noise_scheduler = {
+        "num_train_timesteps": 1000,
+        "beta_schedule": "linear",
+        "prediction_type":"epsilon"
+    }
+    
+    set_default_value(default_noise_scheduler)
+    
+    #set default training process()
+    
+    default_training_process ={
+        "learning_rate": 1e-4,
+        "max_epoch": 3000,
+        "start_epoch":0,
+        "checkpoint": None,
+        "save_epoch": 1000,
+        "exhibit_epoch":200, 
+        "seed": 1126,
+        #optimizer
+        "weight_decay": 0.0,
+        "betas": [0.9, 0.999],
+        "optimiser_epsilon": 1e-8,
+        #Dataloader
+        "shuffle": True,
+        "drop_last": True,
+        #EMA model
+        "ema_inv_gamma": 1.0,
+        "ema_power": 2/3,
+        #set drop_rate to 0.9999
+        "ema_min_value": 0.9999,
+        "ema_max_value": 0.9999
+    }
+    set_default_value(default_training_process)
     return args
 
 

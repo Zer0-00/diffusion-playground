@@ -5,3 +5,4 @@ datasets
 *.pyc
 *.zip
 runs
+output
