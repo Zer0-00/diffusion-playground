@@ -1,6 +1,8 @@
 import json
 import os
 from collections import defaultdict
+from diffusers import EMAModel, UNet2DModel
+import torch
 
 
 def load_parameters(para_dir:str) -> dict:
@@ -105,3 +107,24 @@ def load_parameters(para_dir:str) -> dict:
 def create_folders(f_dir):
     if not os.path.exists(f_dir):
         os.makedirs(f_dir)
+
+def save_checkpoint(
+    output_dir: str,
+    model: UNet2DModel,
+    ema_model: EMAModel,
+    scheduler,
+    optimizer:torch.optim.Optimizer,
+    start_epoch: int
+):
+    """
+        Save checkpoint to current device
+    """
+    checkpoint = {}
+    checkpoint["unet"] = model.state_dict()
+    checkpoint["ema_model"] = ema_model.averaged_model.state_dict()
+    checkpoint["ema_optimization_step"] = ema_model.optimization_step
+    checkpoint["scheduler_config"] = scheduler.config
+    checkpoint["optimizer"] = optimizer.state_dict()
+    checkpoint["start_epoch"] = start_epoch
+    
+    torch.save(checkpoint, output_dir)

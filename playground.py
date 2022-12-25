@@ -1,7 +1,4 @@
 import os
 
-a = ["{}.pt".format(x) for x in range(10)]
-
-b = sorted(a, reverse=True)[0]
-
-print(b)
+a = range(100,0, -1)
+print(list(a))

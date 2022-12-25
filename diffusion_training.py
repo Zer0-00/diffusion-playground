@@ -19,6 +19,7 @@ from tqdm import tqdm
 
 import utils
 from dataset import MVtec_Leather
+from generate_image import AnomalyDetectionModel
 
 # set environment configuration
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
@@ -112,10 +113,10 @@ def training(args):
         checkpoint = torch.load(checkpoint_path, map_location=device)
         
         #resume model
-        model.load_state_dict(checkpoint["Unet"])
+        model.load_state_dict(checkpoint["unet"])
         ema_model.averaged_model.load_state_dict(checkpoint["ema_model"])
         ema_model.optimization_step = checkpoint["ema_optimization_step"]
-        
+        noise_scheduler.from_config(checkpoint["scheduler_config"])
         #resume optimiser
         optimizer.load_state_dict(checkpoint["optimizer"])
         
@@ -165,26 +166,37 @@ def training(args):
         
         #sample 1 image and show the noising and denoising result
         if epoch % args["exhibit_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
-            writer.add_images("input images", input_images)
-            writer.add_images("noisy images", noisy_images)
+            writer.add_images("input images", input_images, epoch)
             
-            writer.add_images("")
+            AnoDet = AnomalyDetectionModel(ema_model, noise_scheduler)
+            generator = torch.Generator(device=AnoDet.device).manual_seed(args["seed"])
             
+            recovered = AnoDet(
+                input_images=input_images,
+                generator=generator,
+                time_steps= noise_scheduler.config.num_train_timesteps
+            )[0]
             
+            writer.add_images("recovered images", recovered, epoch)
             
+            del AnoDet,generator,recovered
+        
+        #save checkpoint    
+        if epoch % args["save_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
+            checkpoint_dir = os.path.join(args["output_dir"], "checkpoint", "{}.pt".format(epoch))
+            #now save checkpoint with current device(be cautious when load -> use map_location)
+            utils.save_checkpoint(
+                checkpoint_dir,
+                model,
+                ema_model,
+                noise_scheduler,
+                optimizer,
+                epoch
+            )
             
+    writer.close()
             
-            
-
-
-   
-    
-
-    
-
-
-
-    
+        
 
     
 
