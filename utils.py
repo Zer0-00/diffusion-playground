@@ -35,7 +35,7 @@ def load_parameters(para_dir:str) -> dict:
     #set input path
     if args["input_path"] == "":
         if args["dataset"] == "leather":
-            args["input_path"] = os.path.join("~", "Datasets", "leather")
+            args["input_path"] = os.path.join("~", "Datasets", "MVTEC","leather")
 
 
     #set output path
