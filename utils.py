@@ -4,7 +4,6 @@ from collections import defaultdict
 from diffusers import EMAModel, UNet2DModel
 import torch
 
-
 def load_parameters(para_dir:str) -> dict:
     """
     loading configure json file.
@@ -43,7 +42,7 @@ def load_parameters(para_dir:str) -> dict:
     set_default_value({"output_path": os.path.join('.','output', cfgs_name)})
  
     #set default Unet structure
-    default_Unet = {
+    default_Unet ={
         "layers_per_block": 2,
         "block_out_channels": (128, 128, 256, 256, 512, 512),
         "down_block_types": (
