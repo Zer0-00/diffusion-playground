@@ -8,3 +8,6 @@ datasets
 *.zip
 runs
 output
+images
+metric
+checkpoint

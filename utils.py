@@ -35,7 +35,7 @@ def load_parameters(para_dir:str) -> dict:
     #set input path
     if args["input_path"] == "":
         if args["dataset"] == "leather":
-            args["input_path"] = os.path.join("~", "Datasets", "MVTEC","leather")
+            args["input_path"] = os.path.join("home", "xuehong","Datasets", "MVTEC","leather")
 
 
     #set output path
@@ -118,6 +118,11 @@ def save_checkpoint(
     """
         Save checkpoint to current device
     """
+    #transfer to cpu
+    model.to("cpu")
+    ema_model.averaged_model.to("cpu")
+    
+    #save
     checkpoint = {}
     checkpoint["unet"] = model.state_dict()
     checkpoint["ema_model"] = ema_model.averaged_model.state_dict()

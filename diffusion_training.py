@@ -26,7 +26,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 def training(args):
     #basic configuration
-    torch.random.seed(args["seed"])
+    torch.manual_seed(args["seed"])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     for folder in ["metric", "images", "checkpoint"]:
@@ -45,31 +45,32 @@ def training(args):
         img_size=args["img_size"],
         rgb=rgb
         )
-    test_dataset = MVtec_Leather(
-        args["input_path"],
-        anomalous=True,
-        img_size=args["img_size"],
-        rgb=rgb,
-        include_good=True
-    )
+    # test_dataset = MVtec_Leather(
+    #     args["input_path"],
+    #     anomalous=True,
+    #     img_size=args["img_size"],
+    #     rgb=rgb,
+    #     include_good=True
+    # )
 
     train_dataloader = DataLoader(
         train_dataset, batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
         )
-    test_dataloader = DataLoader(
-        test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
-        )
+    # test_dataloader = DataLoader(
+    #     test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
+    #     )
 
     del rgb
     #initialize the model
     start_epoch = 0
     
+    print()
     model = UNet2DModel(
         sample_size=args["img_size"],
         in_channels=args["in_channels"],
         out_channels=args["in_channels"],
-        layers_per_block=args["layer_per_block"],
-        block_out_channels=args["block_out_channel"],
+        layers_per_block=args["layers_per_block"],
+        block_out_channels=args["block_out_channels"],
         down_block_types=args["down_block_types"],
         up_block_types=args["up_block_types"]
     )
@@ -79,7 +80,6 @@ def training(args):
         beta_schedule=args["beta_schedule"],
         prediction_type=args["prediction_type"]
     )
-    noise_scheduler.to(device)
         
     #initalize EMAmodel
     ema_model = EMAModel(
@@ -98,7 +98,6 @@ def training(args):
         weight_decay=args["weight_decay"],
         eps=args["optimiser_epsilon"]
     )
-
     #load_checkpoint
     if args["checkpoint"] is not None:
         #find supposed checkpoint
@@ -219,7 +218,7 @@ if __name__ == '__main__':
     
     cfg = sys.argv[1]
     if cfg.isnumeric():
-        para_name = 'configs{}'.format(cfg)
+        para_name = 'configs{}.json'.format(cfg)
     elif cfg.endswith('.json'):
         para_name = cfg
     else:

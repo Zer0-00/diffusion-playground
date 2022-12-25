@@ -1,5 +1,6 @@
 {
     "dataset":"leather",
+    "input_path":"/home/xuehong/Datasets/MVTEC/leather",
     "in_channels": 3,
     "img_size": [256,256],
     "batch_size": 4
