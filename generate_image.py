@@ -4,15 +4,15 @@ from typing import Optional, Union, List
 
 class AnomalyDetectionModel(DiffusionPipeline):
     def __init__(self, unet, scheduler):
-        super().init()
-        self.register_modules(unet=unet, schuduler=scheduler)
+
+        self.register_modules(unet=unet, scheduler=scheduler)
         
     @torch.no_grad()
     def __call__(
             self,
             input_images: torch.Tensor,
             generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
-            time_steps: int = 1000,
+            time_steps: Optional[Union[int, torch.Tensor]] = 1000,
             record_process = False
     )-> tuple:
         """
@@ -21,7 +21,9 @@ class AnomalyDetectionModel(DiffusionPipeline):
             generator: generator for controlling inference seed
             num_noise_steps: number of noising steps(<= scheduler.config.num_train_steps)
         """ 
-    
+        if not torch.is_tensor(time_steps):
+            time_steps = torch.tensor(time_steps).to(self.device)
+        
         input_images = input_images.to(self.device)
         noise = torch.randn(input_images.shape).to(input_images.device)
         images = self.scheduler.add_noise(input_images, noise, time_steps)
@@ -37,7 +39,8 @@ class AnomalyDetectionModel(DiffusionPipeline):
             images = self.scheduler.step(model_output, t, images, generator=generator).prev_sample
             
             #save intermediate results
-            record.append(images)
+            if record_process:
+                record.append(images)
             
         return (images,) if not record_process else (images,record)
             

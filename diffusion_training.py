@@ -15,7 +15,6 @@ from torch.nn.utils import clip_grad_norm_
 from torch.nn import functional as F
 from diffusers import UNet2DModel, DDPMScheduler, DDPMPipeline
 from diffusers.training_utils import EMAModel
-from tqdm import tqdm
 
 import utils
 from dataset import MVtec_Leather
@@ -26,16 +25,16 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 def training(args):
     #basic configuration
-    torch.random.seed(args["seed"])
+    torch.manual_seed(args["seed"])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     for folder in ["metric", "images", "checkpoint"]:
-        f_dir = os.path.join(args["output_dir"], folder)
+        f_dir = os.path.join(args["output_path"], folder)
         utils.create_folders(f_dir)
     
     del folder, f_dir
 
-    writer = SummaryWriter(log_dir=os.path.join(args["output_dir"],"metric"))
+    writer = SummaryWriter(log_dir=os.path.join(args["output_path"],"metric"))
     
     #initialize dataset
     rgb = (args["in_channels"] == 3)
@@ -45,20 +44,20 @@ def training(args):
         img_size=args["img_size"],
         rgb=rgb
         )
-    test_dataset = MVtec_Leather(
-        args["input_path"],
-        anomalous=True,
-        img_size=args["img_size"],
-        rgb=rgb,
-        include_good=True
-    )
+    # test_dataset = MVtec_Leather(
+    #     args["input_path"],
+    #     anomalous=True,
+    #     img_size=args["img_size"],
+    #     rgb=rgb,
+    #     include_good=True
+    # )
 
     train_dataloader = DataLoader(
         train_dataset, batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
         )
-    test_dataloader = DataLoader(
-        test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
-        )
+    # test_dataloader = DataLoader(
+    #     test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
+    #     )
 
     del rgb
     #initialize the model
@@ -68,8 +67,8 @@ def training(args):
         sample_size=args["img_size"],
         in_channels=args["in_channels"],
         out_channels=args["in_channels"],
-        layers_per_block=args["layer_per_block"],
-        block_out_channels=args["block_out_channel"],
+        layers_per_block=args["layers_per_block"],
+        block_out_channels=args["block_out_channels"],
         down_block_types=args["down_block_types"],
         up_block_types=args["up_block_types"]
     )
@@ -79,7 +78,6 @@ def training(args):
         beta_schedule=args["beta_schedule"],
         prediction_type=args["prediction_type"]
     )
-    noise_scheduler.to(device)
         
     #initalize EMAmodel
     ema_model = EMAModel(
@@ -98,14 +96,13 @@ def training(args):
         weight_decay=args["weight_decay"],
         eps=args["optimiser_epsilon"]
     )
-
     #load_checkpoint
     if args["checkpoint"] is not None:
         #find supposed checkpoint
         if args["checkpoint"] != "latest":
-            checkpoint_path = os.path.join(args["output_dir"], "model",args["checkpoint"]+".pt")
+            checkpoint_path = os.path.join(args["output_path"], "model",args["checkpoint"]+".pt")
         else:
-            folder = os.path.join(args["output_dir"], "model")
+            folder = os.path.join(args["output_path"], "model")
             candidates = [cp for cp in os.listdir(folder) if cp.endwith(".pt")]
             last = sorted(candidates)[-1]
             checkpoint_path = os.path.join(folder, last)
@@ -125,11 +122,11 @@ def training(args):
         del checkpoint
         
     #training 
-    tqdm_epochs = tqdm(range(start_epoch, args["max_epoch"]),unit="epoch")
-    for epoch in tqdm_epochs:
+    for epoch in range(start_epoch, args["max_epoch"]):
+        print("epoch: {}/{}".format(epoch, args["max_epoch"]))
         model.train()
         mean_loss = 0
-        for step, batch in enumerate(train_dataloader):
+        for step, batch in enumerate(train_dataloader): 
             input_images = batch["input"]
             input_images = input_images.to(device)
             
@@ -164,17 +161,17 @@ def training(args):
         #report and save results
         writer.add_scalar("train_loss", mean_loss), epoch
         
-        #sample 1 image and show the noising and denoising result
+        #sample 1 batch of image and show the noising and denoising result
         if epoch % args["exhibit_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
             writer.add_images("input images", input_images, epoch)
             
-            AnoDet = AnomalyDetectionModel(ema_model, noise_scheduler)
+            AnoDet = AnomalyDetectionModel(ema_model.averaged_model, noise_scheduler)
             generator = torch.Generator(device=AnoDet.device).manual_seed(args["seed"])
             
             recovered = AnoDet(
                 input_images=input_images,
                 generator=generator,
-                time_steps= noise_scheduler.config.num_train_timesteps
+                time_steps= noise_scheduler.config.num_train_timesteps - 1
             )[0]
             
             writer.add_images("recovered images", recovered, epoch)
@@ -183,8 +180,8 @@ def training(args):
         
         #save checkpoint    
         if epoch % args["save_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
-            checkpoint_dir = os.path.join(args["output_dir"], "checkpoint", "{}.pt".format(epoch))
-            #now save checkpoint with current device(be cautious when load -> use map_location)
+            checkpoint_dir = os.path.join(args["output_path"], "checkpoint", "{}.pt".format(epoch))
+            #now save checkpoint with cpu (be cautious when load -> use map_location)
             utils.save_checkpoint(
                 checkpoint_dir,
                 model,
@@ -219,7 +216,7 @@ if __name__ == '__main__':
     
     cfg = sys.argv[1]
     if cfg.isnumeric():
-        para_name = 'configs{}'.format(cfg)
+        para_name = 'configs{}.json'.format(cfg)
     elif cfg.endswith('.json'):
         para_name = cfg
     else:

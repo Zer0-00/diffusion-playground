@@ -42,8 +42,8 @@ class MVtec_Leather(Dataset):
         ]
         
         normalize_factor = ((0.5,)*self.channel, (0.5,)*self.channel)
-        transform_list.append(T.Normalize(normalize_factor))
-        mask_transform_list.append(T.Normalize(normalize_factor))
+        transform_list.append(T.Normalize(*normalize_factor))
+        mask_transform_list.append(T.Normalize(*normalize_factor))
         
         self.transform = T.Compose(transform_list)
         self.mask_transform = T.Compose(mask_transform_list)
@@ -69,6 +69,7 @@ class MVtec_Leather(Dataset):
                 class_dir = os.path.join(self.data_dir, "test", cl) 
                 self.filenames += [os.path.join(class_dir,file_name) for file_name in os.listdir(class_dir) if file_name.endswith(".png")]
         else:
+            print(self.data_dir)
             self.filenames = [os.path.join(self.data_dir,file_name) for file_name in os.listdir(self.data_dir) if file_name.endswith(".png")]
         
         self.filenames = sorted(self.filenames, key = lambda x: int(x[-7:-4]))    
@@ -77,7 +78,7 @@ class MVtec_Leather(Dataset):
         return len(self.filenames)
     
     def __getitem__(self, idx):
-        if torch.is_tensor():
+        if torch.is_tensor(idx):
             idx = idx.tolist()
         output = {"filename":self.filenames[idx]}
         
@@ -90,17 +91,24 @@ class MVtec_Leather(Dataset):
                 mask = np.zeros((img.shape[0], img.shape[1], 1), dtype=np.uint8)
             else:
                 mask = io.imread(os.path.join(self.data_dir, "groundtruth", name_split[-2], name_split[-1][:-4]+ "_mask.png"))
-        
+
+            mask = self.mask_transform(mask)
+            
         #prepare image and mask        
         img = self.transform(img)
-        mask = self.mask_transform(mask)
+        
+        
         
         #pre-prepare image and mask
-        cat_img = torch.cat((img, mask), 0)
-        prepared_img = self.preparation(cat_img)
-        
-        output["input"] = prepared_img[:self.channel]
-        output["mask"] = prepared_img[self.channel:]
+        if self.anomalous:
+            cat_img = torch.cat((img, mask), 0)
+            prepared_img = self.preparation(cat_img)
+            
+            output["input"] = prepared_img[:self.channel]
+            output["mask"] = prepared_img[self.channel:]
+        else:
+            prepared_img = self.preparation(img)
+            output["input"] = prepared_img
         
         return output
 
