@@ -1,4 +1,4 @@
-import os
+for i in range(5):
+    continue
 
-a = range(100,0, -1)
-print(list(a))
+print(i)

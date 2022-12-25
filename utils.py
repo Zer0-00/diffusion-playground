@@ -3,6 +3,7 @@ import os
 from collections import defaultdict
 from diffusers import EMAModel, UNet2DModel
 import torch
+import copy
 
 def load_parameters(para_dir:str) -> dict:
     """
@@ -119,14 +120,16 @@ def save_checkpoint(
         Save checkpoint to current device
     """
     #transfer to cpu
-    model.to("cpu")
-    ema_model.averaged_model.to("cpu")
+    save_model = copy.deepcopy(model)
+    save_model.to("cpu")
+    save_ema_model = copy.deepcopy(ema_model)
+    save_ema_model.averaged_model.to("cpu")
     
     #save
     checkpoint = {}
-    checkpoint["unet"] = model.state_dict()
-    checkpoint["ema_model"] = ema_model.averaged_model.state_dict()
-    checkpoint["ema_optimization_step"] = ema_model.optimization_step
+    checkpoint["unet"] = save_model.state_dict()
+    checkpoint["ema_model"] = save_ema_model.averaged_model.state_dict()
+    checkpoint["ema_optimization_step"] = save_ema_model.optimization_step
     checkpoint["scheduler_config"] = scheduler.config
     checkpoint["optimizer"] = optimizer.state_dict()
     checkpoint["start_epoch"] = start_epoch

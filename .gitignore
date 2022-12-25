@@ -6,6 +6,7 @@ datasets
 .vscode
 *.pyc
 *.zip
+*.log
 runs
 output
 images
