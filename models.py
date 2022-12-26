@@ -8,7 +8,7 @@ class AnomalyDetectionModel(DiffusionPipeline):
         self.register_modules(unet=unet, scheduler=scheduler)
         
     @torch.no_grad()
-    def __call__(
+    def generate_from_scratch(
             self,
             input_images: torch.Tensor,
             generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
@@ -44,3 +44,12 @@ class AnomalyDetectionModel(DiffusionPipeline):
             
         return (images,) if not record_process else (images,record)
             
+    @torch.no_grad()
+    def __call__(
+            self,
+            input_images: torch.Tensor,
+            generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
+            time_steps: Optional[Union[int, torch.Tensor]] = 1000,
+            record_process = False
+    )-> tuple:
+        pass

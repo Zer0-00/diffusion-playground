@@ -18,7 +18,7 @@ from diffusers.training_utils import EMAModel
 
 import utils
 from dataset import MVtec_Leather
-from generate_image import AnomalyDetectionModel
+from models import AnomalyDetectionModel
 
 # set environment configuration
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
@@ -168,7 +168,7 @@ def training(args):
             AnoDet = AnomalyDetectionModel(ema_model.averaged_model, noise_scheduler)
             generator = torch.Generator(device=AnoDet.device).manual_seed(args["seed"])
             
-            recovered = AnoDet(
+            recovered = AnoDet.generate_from_scratch(
                 input_images=input_images,
                 generator=generator,
                 time_steps= noise_scheduler.config.num_train_timesteps - 1
