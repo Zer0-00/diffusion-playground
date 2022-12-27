@@ -159,7 +159,7 @@ def training(args):
         mean_loss /= (step + 1)
         
         #report and save results
-        writer.add_scalar("train_loss", mean_loss), epoch
+        writer.add_scalar("train_loss", mean_loss, epoch)
         
         #sample 1 batch of image and show the noising and denoising result
         if epoch % args["exhibit_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
