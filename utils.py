@@ -3,7 +3,9 @@ import os
 from collections import defaultdict
 from diffusers import EMAModel, UNet2DModel
 import torch
+from torchvision import utils as vutils
 import copy
+import numpy as np
 
 def load_parameters(para_dir:str) -> dict:
     """
@@ -85,6 +87,7 @@ def load_parameters(para_dir:str) -> dict:
         "save_epoch": 1000,
         "exhibit_epoch":200, 
         "seed": 1126,
+        "batch_size": 4,
         #optimizer
         "weight_decay": 0.0,
         "betas": [0.9, 0.999],
@@ -135,3 +138,39 @@ def save_checkpoint(
     checkpoint["start_epoch"] = start_epoch
     
     torch.save(checkpoint, output_dir)
+
+def save_metrics(metrics, file_dir):
+    #save metrics
+    with open(file_dir, 'w') as f:
+        metrics_name = ""
+        for name in metrics:
+            metrics_name += name
+            metrics_name += ","
+        metrics_name = metrics_name[:-1] + '\n'
+        f.write(metrics_name)
+        for metric in metrics:
+            f.write("{:.4f} +- {:.4f}".format(np.mean(metrics[metric], np.std(metrics[metric]))))
+
+def save_images(images, images_folder_path):
+    for images_name in images:
+        imgs = images[images_name]
+        
+        imgs_folder = os.path.join(images_folder_path, images_name)
+        create_folders(imgs_folder)
+        
+        for idx, img in enumerate(images):
+            f_dir = os.path.join(imgs_folder, "{}.jpg".format(idx))
+            vutils.save_image(img, f_dir)
+
+def tensor2np(input_image:torch.Tensor, normalize=False):
+    """
+    change input tensor(C,H,W) to cv2 np.array(list(np.array(np.uint8)))
+    """
+    if normalize:
+        input_image = (input_image - input_image.min() / input_image.max()-input_image.min())
+        input_image = torch.permute(input_image, (1,2,0)).detach().cpu().numpy()
+        input_image = (input_image * 255).astype(np.uint8)
+        
+    else:
+        input_image = torch.permute(input_image, (1,2,0)).detach().cpu().numpy()
+    return input_image

@@ -52,7 +52,7 @@ class MVtec_Leather(Dataset):
         if "random_crop" in self.prepare:
             prepare_list.append(T.RandomCrop(self.img_size))
         else:
-            prepare_list.append(T.CenterCrop(self.img_size))
+            prepare_list.append(T.Resize(self.img_size))
         
         if "random_rotation" in self.prepare:
             prepare_list.append(T.RandomRotation(180))

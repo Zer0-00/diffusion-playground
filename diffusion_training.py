@@ -165,18 +165,18 @@ def training(args):
         if epoch % args["exhibit_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
             writer.add_images("input images", input_images, epoch)
             
-            AnoDet = AnomalyDetectionModel(ema_model.averaged_model, noise_scheduler)
-            generator = torch.Generator(device=AnoDet.device).manual_seed(args["seed"])
+            ano_detect = AnomalyDetectionModel(ema_model.averaged_model, noise_scheduler)
+            generator = torch.Generator(device=ano_detect.device).manual_seed(args["seed"])
             
-            recovered = AnoDet.generate_from_scratch(
+            recovered = ano_detect.generate_from_scratch(
                 input_images=input_images,
                 generator=generator,
-                time_steps= noise_scheduler.config.num_train_timesteps - 1
+                time_steps=noise_scheduler.config.num_train_timesteps - 1
             )[0]
             
             writer.add_images("recovered images", recovered, epoch)
             
-            del AnoDet,generator,recovered
+            del ano_detect,generator,recovered
         
         #save checkpoint    
         if epoch % args["save_epoch"] == 0 or epoch == (args["max_epoch"] - 1):

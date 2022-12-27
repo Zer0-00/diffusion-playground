@@ -1,4 +1,5 @@
-for i in range(5):
-    continue
+import torch
 
-print(i)
+a = torch.zeros((1,1,2,3))
+a = a.squeeze()
+print(a.shape)
