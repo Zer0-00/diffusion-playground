@@ -100,10 +100,10 @@ def training(args):
     if args["checkpoint"] is not None:
         #find supposed checkpoint
         if args["checkpoint"] != "latest":
-            checkpoint_path = os.path.join(args["output_path"], "model",args["checkpoint"]+".pt")
+            checkpoint_path = os.path.join(args["output_path"], "checkpoint",args["checkpoint"]+".pt")
         else:
-            folder = os.path.join(args["output_path"], "model")
-            candidates = [cp for cp in os.listdir(folder) if cp.endwith(".pt")]
+            folder = os.path.join(args["output_path"], "checkpoint")
+            candidates = [cp for cp in os.listdir(folder) if cp.endswith(".pt")]
             last = sorted(candidates)[-1]
             checkpoint_path = os.path.join(folder, last)
             

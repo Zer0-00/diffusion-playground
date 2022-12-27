@@ -68,7 +68,7 @@ class AnomalyDetectionModel(DiffusionPipeline):
                 time_steps=time_steps
         )[0]
         
-        mse = F.mse_loss(recovered, input_images, reduction = None)
+        mse = F.mse_loss(recovered, input_images, reduction = "none")
         
         return mse
     
@@ -103,10 +103,12 @@ class AnomalyDetectionModel(DiffusionPipeline):
                 images_active.requires_grad = True
                 noise = torch.randn(images_active.shape, device=self.device)
                 images = self.scheduler.add_noise(images_active, noise, t)
-                model_output = self.unet(images, t).sample
-                mse = F.mse_loss(noise, model_output, reduction=None)
+                model_output = self.unet(images, t)
+                mse = F.mse_loss(noise, model_output, reduction="none")
                 mse.backward()
                 grads += images_active.grad
+        else:
+            pass    
 
         #calculate heatmap
         pixel_dim = list(range(2, len(input_images.shape)))

@@ -1,5 +1,6 @@
 import torch
 
-a = torch.zeros((1,1,2,3))
-a = a.squeeze()
-print(a.shape)
+a = torch.Tensor([1.0,1.0,1.0, 0, 0])
+
+b = a.int()
+print(b)
