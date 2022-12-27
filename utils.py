@@ -149,7 +149,7 @@ def save_metrics(metrics, file_dir):
         metrics_name = metrics_name[:-1] + '\n'
         f.write(metrics_name)
         for metric in metrics:
-            f.write("{:.4f} +- {:.4f}".format(np.mean(metrics[metric], np.std(metrics[metric]))))
+            f.write("{:.4f} +- {:.4f}".format(np.mean(metrics[metric]), np.std(metrics[metric])))
 
 def save_images(images, images_folder_path):
     for images_name in images:

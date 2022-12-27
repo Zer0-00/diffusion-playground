@@ -35,17 +35,13 @@ class MVtec_Leather(Dataset):
         
         transform_list.append(T.ToTensor())
         
-        mask_transform_list = [
-            T.ToPILImage(),
-            T.Grayscale(num_output_channels=self.channel),
-            T.ToTensor()
-        ]
+
         
         # normalize_factor = ((0.5,)*self.channel, (0.5,)*self.channel)
         # transform_list.append(T.Normalize(*normalize_factor))
         
         self.transform = T.Compose(transform_list)
-        self.mask_transform = T.Compose(mask_transform_list)
+        
         
         prepare_list = []
         if "random_crop" in self.prepare:
@@ -63,6 +59,12 @@ class MVtec_Leather(Dataset):
             self.classes.append("good")
         
         if self.anomalous:
+            mask_transform_list = [
+            T.ToPILImage(),
+            T.Grayscale(num_output_channels=1),
+            T.ToTensor()
+            ]
+            self.mask_transform = T.Compose(mask_transform_list)
             self.filenames = []
             for cl in self.classes:
                 class_dir = os.path.join(self.data_dir, "test", cl) 

@@ -108,7 +108,6 @@ def calcu_ano_metrics(args):
             generator=generator,
             time_steps= noise_scheduler.config.num_train_timesteps - 1
         )
-
         auroc.append(calcu_AUROC(mask, heatmap))
         img_save_dir = os.path.join(images_folder_path, "{}.jpg".format(step))
         generate_heatmap_comparation(heatmap, input_images, mask, img_save_dir)

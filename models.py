@@ -69,8 +69,9 @@ class AnomalyDetectionModel(DiffusionPipeline):
         )[0]
         
         mse = F.mse_loss(recovered, input_images, reduction = "none")
+        heat_map = mse.sum(dim=1, keepdim=True)
         
-        return mse
+        return heat_map
     
     def generate_grad_detection_map(
             self,

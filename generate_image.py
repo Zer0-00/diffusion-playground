@@ -21,20 +21,25 @@ def generate_heatmap_comparation(heatmap:torch.Tensor, input_image:torch.Tensor,
     mask = tensor2np(mask.squeeze(0))
     
     plt.figure(figsize=(13, 3))
-    plt.subplot(1, 3, 1)
+    plt.subplot(2, 2, 1)
     plt.imshow(input_image)
     plt.title(f'Original image')
 
-    plt.subplot(1, 3, 2)
+    plt.subplot(2, 2, 2)
     plt.imshow(mask, cmap='gray')
     plt.title(f'Ground thuth')
 
-    plt.subplot(1, 3, 3)
-    plt.imshow(heatmap, cmap='jet')
-    plt.imshow(input_image, interpolation='none')
-    plt.imshow(heatmap, cmap='jet', alpha=0.5, interpolation='none')
+    plt.subplot(2, 2, 3)
+    plt.imshow(heatmap, cmap='gray')
+    # plt.imshow(input_image, interpolation='none')
+    # plt.imshow(heatmap, cmap='jet', alpha=0.5, interpolation='none')
     plt.colorbar(extend='both')
     plt.title('Anomaly Detection')
+    
+    plt.subplot(2,2,4)
+    plt.hist(heatmap.flatten())
+    plt.axis("on")
+    plt.title("distribution histogram")
 
     plt.clim(0, max_score)
     plt.savefig(save_dir)
