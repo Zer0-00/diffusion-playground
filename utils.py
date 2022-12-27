@@ -174,3 +174,15 @@ def tensor2np(input_image:torch.Tensor, normalize=False):
     else:
         input_image = torch.permute(input_image, (1,2,0)).detach().cpu().numpy()
     return input_image
+
+def normalize_image(input_images:torch.Tensor):
+    """
+    normalize batch image to (0,1) for every image in batch
+    """
+    pixel_dim = list(range(2, len(input_images.shape)))
+    picture_shape = input_images.shape[2:]
+    maxs = input_images.max(dim=pixel_dim, keepdim=True)
+    mins = input_images.min(dim=pixel_dim, keepdim=True)
+    normalized_images = (input_images - mins.repeat(1,1,*picture_shape)) / (maxs-mins).repeat(1,1,*picture_shape)
+    
+    return normalized_images
