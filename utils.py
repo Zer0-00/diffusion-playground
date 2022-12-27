@@ -181,8 +181,12 @@ def normalize_image(input_images:torch.Tensor):
     """
     pixel_dim = list(range(2, len(input_images.shape)))
     picture_shape = input_images.shape[2:]
-    maxs = input_images.max(dim=pixel_dim, keepdim=True)
-    mins = input_images.min(dim=pixel_dim, keepdim=True)
+    
+    maxs, _ = torch.max(input_images.reshape(input_images.shape[0], input_images.shape[1], -1), dim=-1)
+    maxs = maxs.reshape(*maxs.shape, *((1,)*len(picture_shape)))
+    mins, _ = torch.min(input_images.reshape(input_images.shape[0], input_images.shape[1], -1), dim=-1)
+    mins = mins.reshape(*mins.shape, *((1,)*len(picture_shape)))
+
     normalized_images = (input_images - mins.repeat(1,1,*picture_shape)) / (maxs-mins).repeat(1,1,*picture_shape)
     
     return normalized_images
