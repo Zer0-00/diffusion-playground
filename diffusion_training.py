@@ -28,13 +28,13 @@ def training(args):
     torch.manual_seed(args["seed"])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    for folder in ["metric", "images", "checkpoint"]:
+    for folder in ["metrics", "images", "checkpoint"]:
         f_dir = os.path.join(args["output_path"], folder)
         utils.create_folders(f_dir)
     
     del folder, f_dir
 
-    writer = SummaryWriter(log_dir=os.path.join(args["output_path"],"metric"))
+    writer = SummaryWriter(log_dir=os.path.join(args["output_path"],"metrics"))
     
     #initialize dataset
     rgb = (args["in_channels"] == 3)

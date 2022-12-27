@@ -12,14 +12,14 @@ from dataset import MVtec_Leather
 from models import AnomalyDetectionModel
 from generate_image import generate_heatmap_comparation
 
-def calcu_ano_metric(args):
+def calcu_ano_metrics(args):
     """calculates the AUROC"""    
     args["batch_size"] = 1
     #basic configuration
     torch.manual_seed(args["seed"])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    for folder in ["metric", "images"]:
+    for folder in ["metrics", "images"]:
         f_dir = os.path.join(args["output_path"], folder)
         utils.create_folders(f_dir)
     
@@ -146,4 +146,4 @@ if __name__ == '__main__':
     # parse input
     args = utils.load_parameters(para_dir)
 
-    calcu_ano_metric(args)
+    calcu_ano_metrics(args)

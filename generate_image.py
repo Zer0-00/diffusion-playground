@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 from utils import tensor2np
 
-def generate_heatmap_comparation(heatmap:torch.Tensor, input_image:torch.Tensor, mask:torch.Tensor, save_dir:str, max_score = 100):
+def generate_heatmap_comparation(heatmap:torch.Tensor, input_image:torch.Tensor, mask:torch.Tensor, save_dir:str, max_score = 1):
     """generates heatmap
 
     Args:
@@ -31,7 +31,7 @@ def generate_heatmap_comparation(heatmap:torch.Tensor, input_image:torch.Tensor,
 
     plt.subplot(1, 3, 3)
     plt.imshow(heatmap, cmap='jet')
-    plt.imshow(input_image, cmap='gray', interpolation='none')
+    plt.imshow(input_image, interpolation='none')
     plt.imshow(heatmap, cmap='jet', alpha=0.5, interpolation='none')
     plt.colorbar(extend='both')
     plt.title('Anomaly Detection')
