@@ -190,3 +190,4 @@ def normalize_image(input_images:torch.Tensor):
     normalized_images = (input_images - mins.repeat(1,1,*picture_shape)) / (maxs-mins).repeat(1,1,*picture_shape)
     
     return normalized_images
+
