@@ -3,22 +3,23 @@ import sys
 import torch
 from torch.utils.data import DataLoader 
 import torch.nn.functional as F
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve, auc, roc_auc_score
 from diffusers import UNet2DModel,EMAModel, DDPMScheduler
+import numpy as np
 
 import utils
 from dataset import MVtec_Leather
 from models import AnomalyDetectionModel
 from generate_image import generate_heatmap_comparation
 
-def calcu_ano_metric(args):
+def calcu_ano_metrics(args):
     """calculates the AUROC"""    
     args["batch_size"] = 1
     #basic configuration
     torch.manual_seed(args["seed"])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    for folder in ["metric", "images"]:
+    for folder in ["metrics", "images"]:
         f_dir = os.path.join(args["output_path"], folder)
         utils.create_folders(f_dir)
     
@@ -32,7 +33,7 @@ def calcu_ano_metric(args):
         anomalous=True,
         img_size=args["img_size"],
         rgb=rgb,
-        include_good=True,
+        include_good=False,
         prepare=("",)
     )
 
@@ -73,10 +74,10 @@ def calcu_ano_metric(args):
     
     #find supposed checkpoint
     if args["checkpoint"] != "latest":
-        checkpoint_path = os.path.join(args["output_path"], "model",args["checkpoint"]+".pt")
+        checkpoint_path = os.path.join(args["output_path"], "checkpoint",args["checkpoint"]+".pt")
     else:
-        folder = os.path.join(args["output_path"], "model")
-        candidates = [cp for cp in os.listdir(folder) if cp.endwith(".pt")]
+        folder = os.path.join(args["output_path"], "checkpoint")
+        candidates = [cp for cp in os.listdir(folder) if cp.endswith(".pt")]
         last = sorted(candidates)[-1]
         checkpoint_path = os.path.join(folder, last)
         
@@ -94,7 +95,7 @@ def calcu_ano_metric(args):
     
     auroc = []
     images_folder_path = os.path.join(args["output_path"], "images")
-    for step, batch in test_dataloader:
+    for step, batch in enumerate(test_dataloader):
         print("step:{}/{}".format(step, total_step))
         
         input_images = batch["input"]
@@ -107,7 +108,6 @@ def calcu_ano_metric(args):
             generator=generator,
             time_steps= noise_scheduler.config.num_train_timesteps - 1
         )
-
         auroc.append(calcu_AUROC(mask, heatmap))
         img_save_dir = os.path.join(images_folder_path, "{}.jpg".format(step))
         generate_heatmap_comparation(heatmap, input_images, mask, img_save_dir)
@@ -123,7 +123,9 @@ def calcu_ano_metric(args):
     
 
 def calcu_AUROC(mask:torch.Tensor, heatmap:torch.Tensor):
-    return roc_auc_score(mask.detach().cpu().numpy().flatten(), heatmap.detach().cpu().numpy().flatten())
+    mask_np = mask.detach().cpu().to(torch.uint8).numpy().flatten()
+    heatmap_np = heatmap.detach().cpu().numpy().flatten()
+    return roc_auc_score(mask_np, heatmap_np)
     
 
 
@@ -144,4 +146,4 @@ if __name__ == '__main__':
     # parse input
     args = utils.load_parameters(para_dir)
 
-    calcu_ano_metric(args)
+    calcu_ano_metrics(args)

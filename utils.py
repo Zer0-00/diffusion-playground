@@ -149,7 +149,7 @@ def save_metrics(metrics, file_dir):
         metrics_name = metrics_name[:-1] + '\n'
         f.write(metrics_name)
         for metric in metrics:
-            f.write("{:.4f} +- {:.4f}".format(np.mean(metrics[metric], np.std(metrics[metric]))))
+            f.write("{:.4f} +- {:.4f}".format(np.mean(metrics[metric]), np.std(metrics[metric])))
 
 def save_images(images, images_folder_path):
     for images_name in images:
@@ -174,3 +174,19 @@ def tensor2np(input_image:torch.Tensor, normalize=False):
     else:
         input_image = torch.permute(input_image, (1,2,0)).detach().cpu().numpy()
     return input_image
+
+def normalize_image(input_images:torch.Tensor):
+    """
+    normalize batch image to (0,1) for every image in batch
+    """
+    pixel_dim = list(range(2, len(input_images.shape)))
+    picture_shape = input_images.shape[2:]
+    
+    maxs, _ = torch.max(input_images.reshape(input_images.shape[0], input_images.shape[1], -1), dim=-1)
+    maxs = maxs.reshape(*maxs.shape, *((1,)*len(picture_shape)))
+    mins, _ = torch.min(input_images.reshape(input_images.shape[0], input_images.shape[1], -1), dim=-1)
+    mins = mins.reshape(*mins.shape, *((1,)*len(picture_shape)))
+
+    normalized_images = (input_images - mins.repeat(1,1,*picture_shape)) / (maxs-mins).repeat(1,1,*picture_shape)
+    
+    return normalized_images

@@ -35,18 +35,13 @@ class MVtec_Leather(Dataset):
         
         transform_list.append(T.ToTensor())
         
-        mask_transform_list = [
-            T.ToPILImage(),
-            T.Grayscale(num_output_channels=self.channel),
-            T.ToTensor()
-        ]
+
         
-        normalize_factor = ((0.5,)*self.channel, (0.5,)*self.channel)
-        transform_list.append(T.Normalize(*normalize_factor))
-        mask_transform_list.append(T.Normalize(*normalize_factor))
+        # normalize_factor = ((0.5,)*self.channel, (0.5,)*self.channel)
+        # transform_list.append(T.Normalize(*normalize_factor))
         
         self.transform = T.Compose(transform_list)
-        self.mask_transform = T.Compose(mask_transform_list)
+        
         
         prepare_list = []
         if "random_crop" in self.prepare:
@@ -64,12 +59,17 @@ class MVtec_Leather(Dataset):
             self.classes.append("good")
         
         if self.anomalous:
+            mask_transform_list = [
+            T.ToPILImage(),
+            T.Grayscale(num_output_channels=1),
+            T.ToTensor()
+            ]
+            self.mask_transform = T.Compose(mask_transform_list)
             self.filenames = []
             for cl in self.classes:
                 class_dir = os.path.join(self.data_dir, "test", cl) 
                 self.filenames += [os.path.join(class_dir,file_name) for file_name in os.listdir(class_dir) if file_name.endswith(".png")]
         else:
-            print(self.data_dir)
             self.filenames = [os.path.join(self.data_dir,file_name) for file_name in os.listdir(self.data_dir) if file_name.endswith(".png")]
         
         self.filenames = sorted(self.filenames, key = lambda x: int(x[-7:-4]))    
@@ -90,7 +90,7 @@ class MVtec_Leather(Dataset):
             if name_split[-2] == "good":
                 mask = np.zeros((img.shape[0], img.shape[1], 1), dtype=np.uint8)
             else:
-                mask = io.imread(os.path.join(self.data_dir, "groundtruth", name_split[-2], name_split[-1][:-4]+ "_mask.png"))
+                mask = io.imread(os.path.join(self.data_dir, "ground_truth", name_split[-2], name_split[-1][:-4]+ "_mask.png"))
 
             mask = self.mask_transform(mask)
             

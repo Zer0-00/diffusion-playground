@@ -28,13 +28,13 @@ def training(args):
     torch.manual_seed(args["seed"])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    for folder in ["metric", "images", "checkpoint"]:
+    for folder in ["metrics", "images", "checkpoint"]:
         f_dir = os.path.join(args["output_path"], folder)
         utils.create_folders(f_dir)
     
     del folder, f_dir
 
-    writer = SummaryWriter(log_dir=os.path.join(args["output_path"],"metric"))
+    writer = SummaryWriter(log_dir=os.path.join(args["output_path"],"metrics"))
     
     #initialize dataset
     rgb = (args["in_channels"] == 3)
@@ -100,10 +100,10 @@ def training(args):
     if args["checkpoint"] is not None:
         #find supposed checkpoint
         if args["checkpoint"] != "latest":
-            checkpoint_path = os.path.join(args["output_path"], "model",args["checkpoint"]+".pt")
+            checkpoint_path = os.path.join(args["output_path"], "checkpoint",args["checkpoint"]+".pt")
         else:
-            folder = os.path.join(args["output_path"], "model")
-            candidates = [cp for cp in os.listdir(folder) if cp.endwith(".pt")]
+            folder = os.path.join(args["output_path"], "checkpoint")
+            candidates = [cp for cp in os.listdir(folder) if cp.endswith(".pt")]
             last = sorted(candidates)[-1]
             checkpoint_path = os.path.join(folder, last)
             
@@ -159,11 +159,11 @@ def training(args):
         mean_loss /= (step + 1)
         
         #report and save results
-        writer.add_scalar("train_loss", mean_loss), epoch
+        writer.add_scalar("train_loss", mean_loss, epoch)
         
         #sample 1 batch of image and show the noising and denoising result
         if epoch % args["exhibit_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
-            writer.add_images("input images", input_images, epoch)
+            writer.add_images("input images", utils.normalize_image(input_images), epoch)
             
             ano_detect = AnomalyDetectionModel(ema_model.averaged_model, noise_scheduler)
             generator = torch.Generator(device=ano_detect.device).manual_seed(args["seed"])
@@ -174,7 +174,7 @@ def training(args):
                 time_steps=noise_scheduler.config.num_train_timesteps - 1
             )[0]
             
-            writer.add_images("recovered images", recovered, epoch)
+            writer.add_images("recovered images", utils.normalize_image(recovered), epoch)
             
             del ano_detect,generator,recovered
         
