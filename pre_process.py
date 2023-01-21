@@ -45,6 +45,12 @@ def process_chexpert(data_path, label_dir, output_path, image_size = 256, transf
         name = "{}_{}.npy".format(dirs[2], dirs[3])
         return name
         
+    def adapt_path(origin_path):
+        dirs = origin_path.split('/')
+        output_dir = os.path.join(dirs)
+        return output_dir
+
+    
     with open(label_dir, 'r') as lf:
         reader = csv.DictReader(lf)
         reader = tqdm(reader, total=total_num, unit="pics")
@@ -53,13 +59,17 @@ def process_chexpert(data_path, label_dir, output_path, image_size = 256, transf
             if row["Frontal/Lateral"] == "Lateral":
                 continue
             if float(row["No Finding"]) == 1:
-                img_dir = os.path.join(data_path, row["Path"])
+                img_dir = os.path.join(data_path, adapt_path(row["Path"]))
                 output_dir = os.path.join(output_path, "healthy", extract_output_name(row["Path"]))
                 processor.process(img_dir, output_dir)                
             elif float(row["Pleural Effusion"]) == 1:
-                img_dir = os.path.join(data_path, row["Path"])
+                img_dir = os.path.join(data_path, adapt_path(row["Path"]))
                 output_dir = os.path.join(output_path, "pleural effusions", extract_output_name(row["Path"]))
                 processor.process(img_dir, output_dir)
     
+if __name__ == "__main__":
+    data_path = '..'
+    label_dir = os.path.join(data_path, "train.csv")
+
+
                 
-            
