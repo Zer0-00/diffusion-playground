@@ -134,7 +134,7 @@ class CheXpert(Dataset):
         self.transforms = T.Compose(T.ToTensor())
         
     def __len__(self):
-        return len(self.y)
+        return len(self.image_dirs)
     
     def __getitem__(self, idx):
         image_dir = self.image_dirs[idx]
