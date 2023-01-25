@@ -112,7 +112,49 @@ class MVtec_Leather(Dataset):
         
         return output
 
+class CheXpert(Dataset):
+    def __init__(
+        self,
+        data_dir,
+        anomaly = False
+    ):  
+        self.data_dir = data_dir
+        self.anomaly = anomaly
+        
+        self.health_path = os.path.join(data_dir,"healthy")
+        self.image_dirs = os.listdir(self.health_path)
+        
+        if self.anomaly:
+            self.y = [0]*len(self.health_path)
+            self.anomaly_path = os.path.join(data_dir,"pleural effusions")
+            self.image_dirs += os.listdir(self.anomaly_path)
+            self.y += [1]*len(self.anomaly_path)
             
+            
+        self.transforms = T.Compose(T.ToTensor())
+        
+    def __len__(self):
+        return len(self.y)
+    
+    def __getitem__(self, idx):
+        image_dir = self.image_dirs[idx]
+        
+        image = np.load(image_dir)
+        
+        image = self.transforms(image)
+        
+        output = {"input":image}
+        
+        if self.anomaly:
+            output += {"y": self.y[idx]}
+        
+        return output
+
+        
+        
+        
+        
+        
         
         
 

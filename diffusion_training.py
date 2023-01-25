@@ -17,7 +17,7 @@ from diffusers import UNet2DModel, DDPMScheduler, DDPMPipeline
 from diffusers.training_utils import EMAModel
 
 import utils
-from dataset import MVtec_Leather
+import dataset
 from models import AnomalyDetectionModel
 
 # set environment configuration
@@ -37,20 +37,28 @@ def training(args):
     writer = SummaryWriter(log_dir=os.path.join(args["output_path"],"metrics"))
     
     #initialize dataset
-    rgb = (args["in_channels"] == 3)
-    train_dataset = MVtec_Leather(
-        args["input_path"],
-        anomalous=False,
-        img_size=args["img_size"],
-        rgb=rgb
+    if args["dataset"] == "leather":
+        rgb = (args["in_channels"] == 3)
+        train_dataset = dataset.MVtec_Leather(
+            args["input_path"],
+            anomalous=False,
+            img_size=args["img_size"],
+            rgb=rgb
+            )
+        # test_dataset = MVtec_Leather(
+        #     args["input_path"],
+        #     anomalous=True,
+        #     img_size=args["img_size"],
+        #     rgb=rgb,
+        #     include_good=True
+        # )
+        del rgb
+        
+    elif args["dataset"].lower() == "chexpert":
+        train_dataset = dataset.CheXpert(
+            args["input_path"],
+            include_anomaly=False
         )
-    # test_dataset = MVtec_Leather(
-    #     args["input_path"],
-    #     anomalous=True,
-    #     img_size=args["img_size"],
-    #     rgb=rgb,
-    #     include_good=True
-    # )
 
     train_dataloader = DataLoader(
         train_dataset, batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
@@ -59,7 +67,7 @@ def training(args):
     #     test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
     #     )
 
-    del rgb
+
     #initialize the model
     start_epoch = 0
     
