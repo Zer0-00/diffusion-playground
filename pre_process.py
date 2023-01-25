@@ -1,4 +1,3 @@
-import torch
 from torchvision.transforms import transforms as T
 from PIL import Image
 import numpy as np
@@ -15,9 +14,9 @@ class image_processor():
     ):
         if transforms is None:
             self.transforms = T.Compose([
+                T.ToTensor(),
                 T.Resize(image_size),
                 T.Grayscale(),
-                T.ToTensor(),
             ])
         else:
             self.transforms = transforms
@@ -27,7 +26,7 @@ class image_processor():
         with open(output_dir, 'wb') as f:
             np.save(f, processed_image)
             
-def process_chexpert(data_path, label_dir, output_path, image_size = 256, transforms=None):
+def process_chexpert(data_path, label_dir, output_path, image_size = [256,256], transforms=None):
     processor = image_processor(image_size=image_size, transforms=transforms)
     
     for class_name in ["healthy", "pleural effusions"]:
@@ -47,7 +46,7 @@ def process_chexpert(data_path, label_dir, output_path, image_size = 256, transf
         
     def adapt_path(origin_path):
         dirs = origin_path.split('/')
-        output_dir = os.path.join(dirs)
+        output_dir = os.path.join(*dirs)
         return output_dir
 
     
@@ -58,18 +57,21 @@ def process_chexpert(data_path, label_dir, output_path, image_size = 256, transf
         for row in reader:
             if row["Frontal/Lateral"] == "Lateral":
                 continue
-            if float(row["No Finding"]) == 1:
+            if row["No Finding"] == "1.0":
                 img_dir = os.path.join(data_path, adapt_path(row["Path"]))
                 output_dir = os.path.join(output_path, "healthy", extract_output_name(row["Path"]))
                 processor.process(img_dir, output_dir)                
-            elif float(row["Pleural Effusion"]) == 1:
+            elif row["Pleural Effusion"] == "1.0":
                 img_dir = os.path.join(data_path, adapt_path(row["Path"]))
                 output_dir = os.path.join(output_path, "pleural effusions", extract_output_name(row["Path"]))
                 processor.process(img_dir, output_dir)
     
 if __name__ == "__main__":
     data_path = '..'
-    label_dir = os.path.join(data_path, "train.csv")
+    label_dir = os.path.join(data_path, "CheXpert-v1.0","train.csv")
+    output_dir = os.path.join(data_path, "CheXpert_Processed_1", "train")
+    process_chexpert(data_path, label_dir, output_dir)
+
 
 
                 
