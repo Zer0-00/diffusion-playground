@@ -122,12 +122,12 @@ class CheXpert(Dataset):
         self.anomalous = anomalous
         
         self.health_path = os.path.join(data_dir,"healthy")
-        self.image_dirs = os.listdir(self.health_path)
+        self.image_dirs = [os.path.join(self.health_path, image_dir) for image_dir in os.listdir(self.health_path)]
         
         if self.anomalous:
             self.y = [0]*len(self.health_path)
             self.anomaly_path = os.path.join(data_dir,"pleural effusions")
-            self.image_dirs += os.listdir(self.anomaly_path)
+            self.image_dirs += [os.path.join(self.anomaly_path, image_dir) for image_dir in os.listdir(self.anomaly_path)]
             self.y += [1]*len(self.anomaly_path)
             
             
@@ -149,13 +149,3 @@ class CheXpert(Dataset):
             output += {"y": self.y[idx]}
         
         return output
-
-        
-        
-        
-        
-        
-        
-        
-
-    
