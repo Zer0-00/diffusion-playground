@@ -105,7 +105,7 @@ def training(args):
         eps=args["optimiser_epsilon"]
     )
     #load_checkpoint
-    if args["checkpoint"] is not None:
+    if args["checkpoint"] != "":
         #find supposed checkpoint
         if args["checkpoint"] != "latest":
             checkpoint_path = os.path.join(args["output_path"], "checkpoint",args["checkpoint"]+".pt")
