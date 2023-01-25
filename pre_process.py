@@ -9,14 +9,14 @@ from tqdm import tqdm
 class image_processor():
     def __init__(
         self,
-        image_size = 256,
+        image_size = [256,256],
         transforms = None
     ):
         if transforms is None:
             self.transforms = T.Compose([
+                T.ToTensor(),
                 T.Resize(image_size),
                 T.Grayscale(),
-                T.ToTensor(),
             ])
         else:
             self.transforms = transforms
@@ -26,7 +26,7 @@ class image_processor():
         with open(output_dir, 'wb') as f:
             np.save(f, processed_image)
             
-def process_chexpert(data_path, label_dir, output_path, image_size = 256, transforms=None):
+def process_chexpert(data_path, label_dir, output_path, image_size = [256,256], transforms=None):
     processor = image_processor(image_size=image_size, transforms=transforms)
     
     for class_name in ["healthy", "pleural effusions"]:
@@ -68,8 +68,8 @@ def process_chexpert(data_path, label_dir, output_path, image_size = 256, transf
     
 if __name__ == "__main__":
     data_path = '..'
-    label_dir = os.path.join(data_path, "CheXpert-v1.0","valid.csv")
-    output_dir = os.path.join(data_path, "CheXpert_Processed", "valid")
+    label_dir = os.path.join(data_path, "CheXpert-v1.0","train.csv")
+    output_dir = os.path.join(data_path, "CheXpert_Processed_1", "train")
     process_chexpert(data_path, label_dir, output_dir)
 
 
