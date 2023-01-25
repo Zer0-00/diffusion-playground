@@ -10,7 +10,7 @@ from tqdm import tqdm
 class image_processor():
     def __init__(
         self,
-        image_size = 256,
+        image_size = [256,256],
         transforms = None
     ):
         if transforms is None:
