@@ -3,6 +3,5 @@
     "input_path":"/mnt/CheXpert_Processed/train",
     "in_channels": 1,
     "img_size": [256,256],
-    "batch_size": 4,
-    "checkpoint": "latest"
+    "batch_size": 4
 }
