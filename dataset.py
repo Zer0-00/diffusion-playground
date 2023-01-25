@@ -116,10 +116,10 @@ class CheXpert(Dataset):
     def __init__(
         self,
         data_dir,
-        anomaly = False
+        anomalous = False
     ):  
         self.data_dir = data_dir
-        self.anomaly = anomaly
+        self.anomalous = anomalous
         
         self.health_path = os.path.join(data_dir,"healthy")
         self.image_dirs = os.listdir(self.health_path)

@@ -57,7 +57,7 @@ def training(args):
     elif args["dataset"].lower() == "chexpert":
         train_dataset = dataset.CheXpert(
             args["input_path"],
-            include_anomaly=False
+            anomalous=False
         )
 
     train_dataloader = DataLoader(
