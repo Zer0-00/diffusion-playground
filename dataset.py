@@ -131,7 +131,7 @@ class CheXpert(Dataset):
             self.y += [1]*len(self.anomaly_path)
             
             
-        self.transforms = T.Compose(T.ToTensor())
+        self.transforms = T.Compose([T.ToTensor()])
         
     def __len__(self):
         return len(self.image_dirs)
