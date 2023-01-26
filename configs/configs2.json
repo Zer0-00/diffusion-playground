@@ -1,7 +1,8 @@
 {
     "dataset":"chexpert",
-    "input_path":"/mnt/CheXpert_Processed/train",
+    "input_path":"/home/xuehong/Datasets/CheXpert_Processed/train",
     "in_channels": 1,
     "img_size": [256,256],
-    "batch_size": 4
+    "batch_size": 8,
+    "max_epoch": 50
 }
