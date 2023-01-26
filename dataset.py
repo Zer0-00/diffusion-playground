@@ -131,7 +131,7 @@ class CheXpert(Dataset):
             self.y += [1]*len(self.anomaly_path)
             
             
-        self.transforms = T.Compose([T.ToTensor()])
+        self.transforms = T.Compose([])
         
     def __len__(self):
         return len(self.image_dirs)
@@ -139,7 +139,8 @@ class CheXpert(Dataset):
     def __getitem__(self, idx):
         image_dir = self.image_dirs[idx]
         
-        image = np.load(image_dir)
+        #the dataset has been changed to (C,H,W)
+        image = torch.Tensor(np.load(image_dir))
         
         image = self.transforms(image)
         

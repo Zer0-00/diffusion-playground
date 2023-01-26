@@ -10,5 +10,5 @@ wget -c --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=down
 
 #Unzip
 tar -xf ${filename}
-rm ${filename}
+# rm ${filename}
 cd
