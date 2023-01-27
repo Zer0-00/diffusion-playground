@@ -8,7 +8,7 @@ from diffusers import UNet2DModel,EMAModel, DDPMScheduler
 import numpy as np
 
 import utils
-from dataset import MVtec_Leather
+import dataset
 from models import AnomalyDetectionModel
 from generate_image import generate_heatmap_comparation
 
@@ -26,15 +26,19 @@ def calcu_ano_metrics(args):
     del folder, f_dir
     
     #initialize dataset
-    rgb = (args["in_channels"] == 3)
+    # rgb = (args["in_channels"] == 3)
 
-    test_dataset = MVtec_Leather(
+    # test_dataset = dataset.MVtec_Leather(
+    #     args["input_path"],
+    #     anomalous=True,
+    #     img_size=args["img_size"],
+    #     rgb=rgb,
+    #     include_good=False,
+    #     prepare=("",)
+    # )
+    test_dataset = dataset.CheXpert(
         args["input_path"],
-        anomalous=True,
-        img_size=args["img_size"],
-        rgb=rgb,
-        include_good=False,
-        prepare=("",)
+        anomalous=True
     )
 
     test_dataloader = DataLoader(
@@ -100,7 +104,8 @@ def calcu_ano_metrics(args):
         
         input_images = batch["input"]
         input_images = input_images.to(device)
-        mask = batch["mask"]
+        #mask = batch["mask"]
+        y = batch["y"]
         generator = torch.Generator(device=ano_detect.device).manual_seed(args["seed"])
         
         heatmap = ano_detect.generate_mse_detection_map(
@@ -108,12 +113,14 @@ def calcu_ano_metrics(args):
             generator=generator,
             time_steps= noise_scheduler.config.num_train_timesteps - 1
         )
-        auroc.append(calcu_AUROC(mask, heatmap))
+        anomaly_score = heatmap.view(heatmap.shape[0], -1).sum(dim=1)
+        #auroc.append(calcu_AUROC(mask, heatmap))
         img_save_dir = os.path.join(images_folder_path, "{}.jpg".format(step))
-        generate_heatmap_comparation(heatmap, input_images, mask, img_save_dir)
+        generate_heatmap_comparation(heatmap, input_images, img_save_dir)
         
     metrics = {
-        "AUROC": auroc
+        #"AUROC": auroc
+        "anomaly_score" : anomaly_score
     }
 
     
