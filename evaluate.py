@@ -35,6 +35,7 @@ def calcu_ano_metrics(args):
     #     include_good=False,
     #     prepare=("",)
     # )
+    # del rgb
     test_dataset = dataset.CheXpert(
         args["input_path"],
         anomalous=True
@@ -44,7 +45,7 @@ def calcu_ano_metrics(args):
         test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
         )
 
-    del rgb
+
     #initialize the model
     start_epoch = 0
     
