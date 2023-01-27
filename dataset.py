@@ -144,7 +144,10 @@ class CheXpert(Dataset):
         
         image = self.transforms(image)
         
-        output = {"input":image}
+        output = {
+            "input": image,
+            "name" : image_dir
+        }
         
         if self.anomalous:
             output += {"y": self.y[idx]}

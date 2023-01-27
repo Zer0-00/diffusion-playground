@@ -97,7 +97,7 @@ def calcu_ano_metrics(args):
     ano_detect.unet.eval()
     total_step = len(test_dataset)
     
-    auroc = []
+    anomaly_scores = []
     images_folder_path = os.path.join(args["output_path"], "images")
     for step, batch in enumerate(test_dataloader):
         print("step:{}/{}".format(step, total_step))
@@ -107,27 +107,28 @@ def calcu_ano_metrics(args):
         #mask = batch["mask"]
         y = batch["y"]
         generator = torch.Generator(device=ano_detect.device).manual_seed(args["seed"])
-        
         heatmap = ano_detect.generate_mse_detection_map(
             input_images=input_images,
             generator=generator,
             time_steps= noise_scheduler.config.num_train_timesteps - 1
         )
-        anomaly_score = heatmap.view(heatmap.shape[0], -1).sum(dim=1)
+        anomaly_scores.append(heatmap.view(heatmap.shape[0], -1).sum(dim=1))
         #auroc.append(calcu_AUROC(mask, heatmap))
         img_save_dir = os.path.join(images_folder_path, "{}.jpg".format(step))
         generate_heatmap_comparation(heatmap, input_images, img_save_dir)
         
+    anomaly_scores = torch.cat(anomaly_scores, dim = 0)
     metrics = {
         #"AUROC": auroc
-        "anomaly_score" : anomaly_score
+        "anomaly_score" : anomaly_scores
     }
 
     
     #save the metrics and images
     file_path = os.path.join(args["output_path"], "metrics", "mse_method.csv")
     utils.save_metrics(metrics, file_path)
-    
+    file_path = os.path.join(args["output_path"], "metrics", "mse_method_detail.csv")
+    utils.save_detail_metrics(metrics, file_path)
 
 def calcu_AUROC(mask:torch.Tensor, heatmap:torch.Tensor):
     mask_np = mask.detach().cpu().to(torch.uint8).numpy().flatten()

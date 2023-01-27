@@ -6,6 +6,7 @@ import torch
 from torchvision import utils as vutils
 import copy
 import numpy as np
+import csv
 
 def load_parameters(para_dir:str) -> dict:
     """
@@ -158,9 +159,21 @@ def save_images(images, images_folder_path):
         imgs_folder = os.path.join(images_folder_path, images_name)
         create_folders(imgs_folder)
         
-        for idx, img in enumerate(images):
+        for idx, img in enumerate(imgs):
             f_dir = os.path.join(imgs_folder, "{}.jpg".format(idx))
             vutils.save_image(img, f_dir)
+            
+def save_detail_metrics(metrics:dict, file_path):
+    with open(file_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        headers = list(metrics.keys())
+        writer.writerow(headers)
+        #write rows
+        for idx,_ in enumerate(metrics[headers[0]]):
+            row = []
+            for header in headers:
+                row.append(metrics[header][idx])
+            writer.writerow(row)
 
 def tensor2np(input_image:torch.Tensor, normalize=False):
     """
