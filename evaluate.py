@@ -2,10 +2,9 @@ import os
 import sys
 import torch
 from torch.utils.data import DataLoader 
-import torch.nn.functional as F
 from sklearn.metrics import roc_curve, auc, roc_auc_score
 from diffusers import UNet2DModel,EMAModel, DDPMScheduler
-import numpy as np
+import time
 
 import utils
 import dataset
@@ -13,7 +12,7 @@ from models import AnomalyDetectionModel
 from generate_image import generate_heatmap_comparation
 
 def calcu_ano_metrics(args):
-    """calculates the AUROC"""    
+    """calculates metrics of anomaly detection"""    
     args["batch_size"] = 1
     #basic configuration
     torch.manual_seed(args["seed"])
@@ -98,14 +97,19 @@ def calcu_ano_metrics(args):
     total_step = len(test_dataset)
     
     anomaly_scores = []
+    times = []
+    ys = []
     images_folder_path = os.path.join(args["output_path"], "images")
     for step, batch in enumerate(test_dataloader):
+        start_time = time.time()
+        
         print("step:{}/{}".format(step, total_step))
         
         input_images = batch["input"]
         input_images = input_images.to(device)
         #mask = batch["mask"]
         y = batch["y"]
+        ys.append(y)
         generator = torch.Generator(device=ano_detect.device).manual_seed(args["seed"])
         heatmap = ano_detect.generate_mse_detection_map(
             input_images=input_images,
@@ -117,10 +121,16 @@ def calcu_ano_metrics(args):
         img_save_dir = os.path.join(images_folder_path, "{}.jpg".format(step))
         generate_heatmap_comparation(heatmap, input_images, img_save_dir)
         
+        end_time = time.time()
+        
+        times.append((end_time - start_time))
+        
     anomaly_scores = torch.cat(anomaly_scores, dim = 0)
     metrics = {
         #"AUROC": auroc
-        "anomaly_score" : anomaly_scores
+        "anomaly_score" : anomaly_scores,
+        "y" : ys,
+        "time": times
     }
 
     
