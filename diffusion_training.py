@@ -5,6 +5,8 @@ varying testing models
 from matplotlib import pyplot as plt
 import numpy as np
 import os
+# set environment configuration
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 import random
 import sys
 import torch
@@ -20,8 +22,7 @@ import utils
 import dataset
 from models import AnomalyDetectionModel
 
-# set environment configuration
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+
 
 def training(args):
     #basic configuration

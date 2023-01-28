@@ -85,6 +85,7 @@ def load_parameters(para_dir:str) -> dict:
         "max_epoch": 3000,
         "start_epoch":0,
         "checkpoint": None,
+        "model_path": None,
         "save_epoch": 1000,
         "exhibit_epoch":200, 
         "seed": 1126,
@@ -150,7 +151,8 @@ def save_metrics(metrics, file_dir):
         metrics_name = metrics_name[:-1] + '\n'
         f.write(metrics_name)
         for metric in metrics:
-            f.write("{:.4f} +- {:.4f}".format(np.mean(metrics[metric]), np.std(metrics[metric])))
+            f.write("{:.4f} +- {:.4f},".format(torch.mean(metrics[metric]), torch.std(metrics[metric])))
+            
 
 def save_images(images, images_folder_path):
     for images_name in images:
@@ -172,7 +174,7 @@ def save_detail_metrics(metrics:dict, file_path):
         for idx,_ in enumerate(metrics[headers[0]]):
             row = []
             for header in headers:
-                row.append(metrics[header][idx])
+                row.append(float(metrics[header][idx]))
             writer.writerow(row)
 
 def tensor2np(input_image:torch.Tensor, normalize=False):

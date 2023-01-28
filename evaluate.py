@@ -1,4 +1,5 @@
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import sys
 import torch
 from torch.utils.data import DataLoader 
@@ -11,6 +12,7 @@ import dataset
 from models import AnomalyDetectionModel
 from generate_image import generate_heatmap_comparation
 
+
 def calcu_ano_metrics(args):
     """calculates metrics of anomaly detection"""    
     args["batch_size"] = 1
@@ -19,7 +21,7 @@ def calcu_ano_metrics(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     for folder in ["metrics", "images"]:
-        f_dir = os.path.join(args["output_path"], folder)
+        f_dir = os.path.join(args["output_path"], 'valid',folder)
         utils.create_folders(f_dir)
     
     del folder, f_dir
@@ -40,7 +42,7 @@ def calcu_ano_metrics(args):
         args["input_path"],
         anomalous=True
     )
-
+    
     test_dataloader = DataLoader(
         test_dataset,batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]
         )
@@ -77,7 +79,9 @@ def calcu_ano_metrics(args):
     #load_checkpoint and create pipeline
     
     #find supposed checkpoint
-    if args["checkpoint"] != "latest":
+    if args["checkpoint"] is None and args["model_path"] is not None:
+        checkpoint_path = args["model_path"]
+    elif args["checkpoint"] != "latest":
         checkpoint_path = os.path.join(args["output_path"], "checkpoint",args["checkpoint"]+".pt")
     else:
         folder = os.path.join(args["output_path"], "checkpoint")
@@ -100,45 +104,51 @@ def calcu_ano_metrics(args):
     anomaly_scores = []
     times = []
     ys = []
-    images_folder_path = os.path.join(args["output_path"], "images")
+    tt_iters = 1000
+    images_folder_path = os.path.join(args["output_path"],"valid", "images")
     for step, batch in enumerate(test_dataloader):
         start_time = time.time()
         
-        print("step:{}/{}".format(step, total_step))
+        print("step:{}/{}".format(step, tt_iters))
         
         input_images = batch["input"]
         input_images = input_images.to(device)
         #mask = batch["mask"]
-        y = batch["y"]
+        y = batch["y"] * 1.0        #change to float
         ys.append(y)
         generator = torch.Generator(device=ano_detect.device).manual_seed(args["seed"])
-        heatmap = ano_detect.generate_mse_detection_map(
-            input_images=input_images,
-            generator=generator,
-            time_steps= noise_scheduler.config.num_train_timesteps - 1
+        heatmap, generated_image = ano_detect.generate_mse_detection_map(
+            input_images = input_images,
+            generator = generator,
+            time_steps = noise_scheduler.config.num_train_timesteps - 1,
+            return_generated = True
         )
-        anomaly_scores.append(heatmap.view(heatmap.shape[0], -1).sum(dim=1))
+        anomaly_scores.append(heatmap.view(heatmap.shape[0], -1).mean(dim=1))
         #auroc.append(calcu_AUROC(mask, heatmap))
         img_save_dir = os.path.join(images_folder_path, "{}.jpg".format(step))
-        generate_heatmap_comparation(heatmap, input_images, img_save_dir)
+        generate_heatmap_comparation(heatmap, input_images, img_save_dir, generated_image=generated_image)
         
         end_time = time.time()
         
-        times.append((end_time - start_time))
+        times.append(torch.Tensor([end_time - start_time]))
+        
+        if step > tt_iters or step == tt_iters:
+            break
         
     anomaly_scores = torch.cat(anomaly_scores, dim = 0)
+    ys = torch.cat(ys, dim = 0)
+    times = torch.cat(times)
     metrics = {
         #"AUROC": auroc
         "anomaly_score" : anomaly_scores,
         "y" : ys,
         "time": times
     }
-
     
     #save the metrics and images
-    file_path = os.path.join(args["output_path"], "metrics", "mse_method.csv")
+    file_path = os.path.join(args["output_path"], "valid","metrics", "mse_method.csv")
     utils.save_metrics(metrics, file_path)
-    file_path = os.path.join(args["output_path"], "metrics", "mse_method_detail.csv")
+    file_path = os.path.join(args["output_path"], "valid","metrics", "mse_method_detail.csv")
     utils.save_detail_metrics(metrics, file_path)
 
 def calcu_AUROC(mask:torch.Tensor, heatmap:torch.Tensor):
