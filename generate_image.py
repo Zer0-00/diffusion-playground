@@ -62,6 +62,7 @@ def generate_heatmap_comparation(heatmap:torch.Tensor, input_image:torch.Tensor,
     
     plt.clim(0, max_score)
     plt.savefig(save_dir)
+    plt.close()
     
     
     
