@@ -4,8 +4,6 @@
     "in_channels": 1,
     "img_size": [256,256],
     "batch_size": 8,
-    "max_epoch": 200,
-    "exhibit_epoch":25,
-    "model_path":"/home/xuehong/diffusion/diffusion-playground/model/CheXpert.pt",
-    "checkpoint": "latest"
+    "max_epoch": 50,
+    "model_path":"/home/xuehong/diffusion/diffusion-playground/model/99.pt"
 }
