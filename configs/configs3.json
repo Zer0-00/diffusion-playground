@@ -6,6 +6,7 @@
     "batch_size": 8,
     "max_epoch": 200,
     "exhibit_epoch":25,
+    "save_epoch": 25,
     "model_path":"/home/xuehong/diffusion/diffusion-playground/model/CheXpert.pt",
     "checkpoint": "latest"
 }
