@@ -2,7 +2,8 @@ from diffusers.pipeline_utils import DiffusionPipeline
 import torch
 import torch.nn.functional as F
 from typing import Optional, Union, List
-from torch.nn import MSELoss
+from torch.nn import Embedding
+
 class AnomalyDetectionModel(DiffusionPipeline):
     def __init__(self, unet, scheduler):
 

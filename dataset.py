@@ -159,14 +159,14 @@ class Brats2020(Dataset):
     def __init__(
         self,
         data_dir,
-        anomalous = False,
+        test = False,
         trans = None,
         seg_trans = None
     ) -> None:
         super().__init__()
         
         self.data_dir = data_dir
-        self.anomalous = anomalous
+        self.test = test
         
         self.image_folder = os.path.join(self.data_dir, "images")
         self.image_files = os.listdir(self.image_folder)
@@ -176,12 +176,11 @@ class Brats2020(Dataset):
         else:
             self.transforms = trans
         
-        if self.anomalous:
-            self.segmentation_folder = os.path.join(self.data_dir, "segmentations")
-            if seg_trans is None:
-                self.seg_transforms = T.Compose([])
-            else:
-                self.seg_transforms = seg_trans
+        self.segmentation_folder = os.path.join(self.data_dir, "segmentations")
+        if seg_trans is None:
+            self.seg_transforms = T.Compose([])
+        else:
+            self.seg_transforms = seg_trans
             
     def __len__(self):
         return len(self.image_files)
@@ -195,16 +194,18 @@ class Brats2020(Dataset):
         outputs["input"] = image
         
         #matching segmentation to image
-        if self.anomalous:
-            seg_dir = os.path.join(self.segmentation_folder, self.find_seg(self.image_files[idx]))
-            seg = torch.Tensor(self.load_method(seg_dir))
-            seg = self.seg_transforms(seg)
-            
-            #determine whether is normal (0:normal, 1: abnormal)
-            y = (seg.max() > 0) * 1.0
-            
-            outputs["y"] = y
-            outputs["seg"] = seg
+
+        seg_dir = os.path.join(self.segmentation_folder, self.find_seg(self.image_files[idx]))
+        seg = torch.Tensor(self.load_method(seg_dir))
+        seg = self.seg_transforms(seg)
+        
+        #determine whether is normal (0:normal, 1: abnormal)
+        y = (seg.max() > 0) * 1.0
+        
+        outputs["y"] = y
+        if self.test:
+            #generating segmentation ground truth
+            outputs["seg"] = seg > 0 * 1.0
             
         return outputs
         

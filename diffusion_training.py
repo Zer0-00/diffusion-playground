@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from torch.nn import functional as F
-from diffusers import UNet2DModel, DDPMScheduler, DDPMPipeline
+from diffusers import UNet2DModel,UNet2DConditionModel, DDPMScheduler
 from diffusers.training_utils import EMAModel
 
 import utils
@@ -78,15 +78,27 @@ def training(args):
     #initialize the model
     start_epoch = 0
     
-    model = UNet2DModel(
-        sample_size=args["img_size"],
-        in_channels=args["in_channels"],
-        out_channels=args["in_channels"],
-        layers_per_block=args["layers_per_block"],
-        block_out_channels=args["block_out_channels"],
-        down_block_types=args["down_block_types"],
-        up_block_types=args["up_block_types"]
-    )
+    if args["dataset"].lower() == "brats2020":
+        model = UNet2DConditionModel(
+            sample_size=args["img_size"],
+            in_channels=args["in_channels"],
+            out_channels=args["in_channels"],
+            layers_per_block=args["layers_per_block"],
+            block_out_channels=args["block_out_channels"],
+            down_block_types=args["down_block_types"],
+            up_block_types=args["up_block_types"],
+            num_class_embeds=2
+        )
+    else:
+        model = UNet2DModel(
+            sample_size=args["img_size"],
+            in_channels=args["in_channels"],
+            out_channels=args["in_channels"],
+            layers_per_block=args["layers_per_block"],
+            block_out_channels=args["block_out_channels"],
+            down_block_types=args["down_block_types"],
+            up_block_types=args["up_block_types"]
+        )
     model.to(device)
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=args["num_train_timesteps"],
@@ -157,7 +169,10 @@ def training(args):
             noisy_images = noise_scheduler.add_noise(input_images, noise, timesteps)
             
             #denoising
-            epsilons = model(noisy_images, timesteps).sample
+            if args["dataset"].lower() == "brats2020":
+                pass
+            else:
+                epsilons = model(noisy_images, timesteps).sample
             
             #update weights
             loss = F.mse_loss(epsilons, noise,reduction="mean")
