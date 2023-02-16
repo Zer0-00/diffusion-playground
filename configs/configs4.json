@@ -1,0 +1,10 @@
+{
+    "dataset":"brats2020",
+    "input_path":"/home/xuehong/Datasets/Brats_Processed_Split/train",
+    "in_channels": 4,
+    "img_size": [256,256],
+    "batch_size": 8,
+    "max_epoch": 200,
+    "exhibit_epoch":25,
+    "save_epoch": 25
+}
