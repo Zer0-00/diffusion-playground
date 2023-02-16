@@ -200,8 +200,8 @@ class Brats2020(Dataset):
         seg = self.seg_transforms(seg)
         
         #determine whether is normal (0:normal, 1: abnormal)
-        y = (seg.max() > 0) * 1.0
-        
+        y = 1 if(seg.max() > 0) else 0
+
         outputs["y"] = y
         if self.test:
             #generating segmentation ground truth

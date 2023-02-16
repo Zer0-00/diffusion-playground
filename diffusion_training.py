@@ -64,7 +64,7 @@ def training(args):
     elif args["dataset"].lower() == "brats2020":
         train_dataset = dataset.Brats2020(
             args["input_path"],
-            anomalous=False
+            test=False
         )
 
     train_dataloader = DataLoader(
