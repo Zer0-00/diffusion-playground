@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from matplotlib import pyplot as plt
+import csv
 
 from utils import tensor2np
 
@@ -65,4 +66,35 @@ def generate_heatmap_comparation(heatmap:torch.Tensor, input_image:torch.Tensor,
     plt.close()
     
     
+def generate_anomaly_histogram(data_dir):
+    """Generates histogram of anomaly scores"""
     
+    #read csv
+    with open(data_dir, 'r') as f:
+        reader = csv.DictReader(f)
+        
+        normal = []
+        anomaly = []
+        for row in reader:
+            if row['y'] == "1.0":
+                anomaly.append(float(row['anomaly_score']))
+            else:
+                normal.append(float(row['anomaly_score']))
+    
+    #draw the distribution curves
+    normal = np.array(normal)
+    anomaly = np.array(anomaly)
+            
+    hist_normal, bins_normal = np.histogram(normal, bins=50, density=True)
+    hist_anomaly, bins_anomaly = np.histogram(anomaly, bins=50, density=True)
+    
+    bins_normal = [(bins_normal[i] + bins_normal[i-1]) / 2 for i in range(1, len(bins_normal))]
+    bins_anomaly = [(bins_anomaly[i] + bins_anomaly[i-1]) / 2 for i in range(1, len(bins_anomaly))]
+    
+    plt.plot(bins_normal, hist_normal, label="normal")
+    plt.plot(bins_anomaly, hist_anomaly, label="anomaly")
+    plt.xlabel("anomaly_score")
+    plt.ylabel("density")
+    plt.legend()
+    
+    plt.show()
