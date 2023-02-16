@@ -60,6 +60,12 @@ def training(args):
             args["input_path"],
             anomalous=False
         )
+        
+    elif args["dataset"].lower() == "brats2020":
+        train_dataset = dataset.Brats2020(
+            args["input_path"],
+            anomalous=False
+        )
 
     train_dataloader = DataLoader(
         train_dataset, batch_size=args["batch_size"],shuffle=args["shuffle"], drop_last=args["drop_last"]

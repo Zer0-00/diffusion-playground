@@ -165,7 +165,7 @@ class Brats2020(Dataset):
     ) -> None:
         super().__init__()
         
-        self.data_dir = data_dir,
+        self.data_dir = data_dir
         self.anomalous = anomalous
         
         self.image_folder = os.path.join(self.data_dir, "images")
@@ -208,10 +208,10 @@ class Brats2020(Dataset):
             
         return outputs
         
-    def load_method(image_dir):
+    def load_method(self, image_dir):
         return np.load(image_dir)
     
-    def find_seg(image_file):
+    def find_seg(self, image_file):
         seg_suffix = "seg.npy"
 
         image_split = image_file.split("_")
