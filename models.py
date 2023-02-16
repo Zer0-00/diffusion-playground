@@ -35,7 +35,8 @@ class AnomalyDetectionModel(DiffusionPipeline):
             input_images: torch.Tensor,
             generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
             time_steps: Optional[Union[int, torch.Tensor]] = 1000,
-            record_process = False
+            record_process = False,
+            model_kwargs = dict()
     )-> tuple:
         """
         Parameters:
@@ -55,7 +56,7 @@ class AnomalyDetectionModel(DiffusionPipeline):
         
         for t in range(time_steps,-1, -1):
             # predict noise
-            model_output = self.unet(images, t).sample
+            model_output = self.unet(images, t, **model_kwargs).sample
             
             # compute denoising
             images = self.scheduler.step(model_output, t, images, generator=generator).prev_sample
