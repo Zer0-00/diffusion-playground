@@ -134,13 +134,13 @@ def process_Brats2020(data_path, output_dir):
                 result.append(img)
             
             result = torch.cat(result, dim=0)
-            result_save_path = os.path.join(output_dir, "images", "BraTS20_Training_{:0>5d}".format(global_counts))
+            result_save_path = os.path.join(output_dir, "images", "BraTS20_Training_{:0>5d}_image".format(global_counts))
             save_method(result_save_path, result)
             
             #processing segmentations
             seg = imgs[4][:,:,slice]
             seg = trans(seg)
-            seg_save_path = os.path.join(output_dir, "segmentations", "BraTS20_Training_{:0>5d}".format(global_counts))
+            seg_save_path = os.path.join(output_dir, "segmentations", "BraTS20_Training_{:0>5d}_seg".format(global_counts))
             save_method(seg_save_path, seg)
             
             global_counts += 1    
