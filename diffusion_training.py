@@ -20,7 +20,7 @@ from diffusers.training_utils import EMAModel
 
 import utils
 import dataset
-from models import AnomalyDetectionModel
+from models import AnomalyDetectionModel, ClassGuidedUNet2DModel
 
 
 
@@ -79,7 +79,7 @@ def training(args):
     start_epoch = 0
     
     if args["dataset"].lower() == "brats2020":
-        model = UNet2DConditionModel(
+        model = ClassGuidedUNet2DModel(
             sample_size=args["img_size"],
             in_channels=args["in_channels"],
             out_channels=args["in_channels"],
@@ -87,7 +87,7 @@ def training(args):
             block_out_channels=args["block_out_channels"],
             down_block_types=args["down_block_types"],
             up_block_types=args["up_block_types"],
-            num_class_embeds=2
+            num_class=2
         )
     else:
         model = UNet2DModel(
@@ -170,7 +170,8 @@ def training(args):
             
             #denoising
             if args["dataset"].lower() == "brats2020":
-                pass
+                class_labels = batch["y"].to(device)
+                epsilons = model(noisy_images, timesteps, class_labels=class_labels).sample
             else:
                 epsilons = model(noisy_images, timesteps).sample
             
