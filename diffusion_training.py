@@ -194,7 +194,7 @@ def training(args):
         
         #sample 1 batch of image and show the noising and denoising result
         if epoch % args["exhibit_epoch"] == 0 or epoch == (args["max_epoch"] - 1):
-            writer.add_images("input images", utils.normalize_image(input_images[:,0].unsqueeze(1)), epoch)
+            
             
             ano_detect = AnomalyDetectionModel(ema_model.averaged_model, noise_scheduler)
             generator = torch.Generator(device=ano_detect.device).manual_seed(args["seed"])
@@ -211,7 +211,10 @@ def training(args):
                 model_kwargs=model_kwargs
             )[0]
             
-            writer.add_images("recovered images", utils.normalize_image(recovered[:,0].unsqueeze(1)), epoch)
+            if args["dataset"].lower() == "brats2020":
+                for img_idx, image_type in enumerate(["flair", "t1", "t1ce", "t2"]):
+                    writer.add_images("input images/{}".format(image_type), utils.normalize_image(input_images[:,img_idx].unsqueeze(1)), epoch)
+                    writer.add_images("recovered images/{}".format(image_type), utils.normalize_image(recovered[:,img_idx].unsqueeze(1)), epoch)
             
             del ano_detect,generator,recovered
         
