@@ -207,7 +207,7 @@ def training(args):
             recovered = ano_detect.generate_from_scratch(
                 input_images=input_images,
                 generator=generator,
-                time_steps=noise_scheduler.config.num_train_timesteps - 1,
+                time_steps=500,
                 model_kwargs=model_kwargs
             )[0]
             
