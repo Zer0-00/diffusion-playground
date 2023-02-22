@@ -130,8 +130,8 @@ def training(args):
             checkpoint_path = os.path.join(args["output_path"], "checkpoint",args["checkpoint"]+".pt")
         else:
             folder = os.path.join(args["output_path"], "checkpoint")
-            candidates = [cp for cp in os.listdir(folder) if cp.endswith(".pt")]
-            last = sorted(candidates)[-1]
+            candidates = [int(cp[:-3]) for cp in os.listdir(folder) if cp.endswith(".pt")]
+            last = "{}.pt".format(sorted(candidates)[-1])
             checkpoint_path = os.path.join(folder, last)
             
         checkpoint = torch.load(checkpoint_path, map_location=device)
